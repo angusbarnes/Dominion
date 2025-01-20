@@ -1,0 +1,13 @@
+# Sensitive Project Files
+*.env
+*.cfg
+
+# IDE Files
+/.vscode/
+
+# OS Files
+.DS_Store
+.DS_Store?
+ehthumbs.db
+Icon?
+Thumbs.db
