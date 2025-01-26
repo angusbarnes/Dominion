@@ -7,8 +7,8 @@ word_lists = {
     "first_parts": [
         "Exo",
         "Ino",
-        'Quo'
-        'Try'
+        'Quo',
+        'Try',
         'Temp',
         'Hexo',
         'Att',
@@ -134,6 +134,13 @@ word_lists = {
         'zene',
         'zinth',
         'pian',
+        'ist',
+        'end',
+        'ed',
+        'th',
+        'cro',
+        'ine',
+        'one',
         'tronix',
         'ters',
         'ify',
@@ -204,13 +211,51 @@ word_lists = {
     ],
     "noun": [
         "Petroleum",
+        "Gamblers",
+        "Chaos",
+        "Rimworld",
+        "Solar",
+        "Stellar",
+        "Canary",
+        'Oblivion',
+        "Panda",
+        "Bison",
+        "Oryx",
+        'Bane',
+        'Stark',
+        'Desert',
+        'Mountain',
+        'Zero',
+        'Void',
+        'Null',
+        "Magnet",
+        "Computer",
+        "Shenzen",
+        "Hong Kong",
+        "Canadian",
+        'Baltic',
+        'Spitzbergen',
+        'Arctic',
+        'Snow',
+        'Rain',
+        'Fire',
+        'Hellstorm',
+        'Volcanic',
+        "Pennington",
+        "Choi",
+        "Walters",
+        "Farmers",
+        "Bankers",
+        "Warlords",
         "Germany",
         "African Nations",
         "Green",
         'Shipbuilding',
         "Red",
         "Black",
+        "Mumbai",
         "Nuclear",
+        "Cobalt",
         "Weapons",
         "Money",
         "Colonisers",
@@ -228,7 +273,9 @@ word_lists = {
         "Europe", 
         "Candor", 
         "Steve", 
-        "Iron", 
+        "Iron",
+        'Banking',
+        'Armsdealer',
         "Darkwood", 
         "Barnes", 
         "Gem",
@@ -244,6 +291,18 @@ word_lists = {
         'Kwan',
         'Gibson',
         'Mining',
+        'Marshall',
+        'Commander',
+        'Tasman',
+        'Musk',
+        'Bezos',
+        'Meta',
+        'Bantam'
+        'Euphoric',
+        'Aurora',
+        'Wilden',
+        'Eternal',
+        'Ethereal',
         'Diamond',
         'Tech',
         'Techno',
@@ -303,6 +362,7 @@ word_lists = {
         'Naval',
         'Maritime',
         'Peace',
+        'Paradox',
         'Fang',
         'Wing',
         'Latin',
@@ -311,13 +371,61 @@ word_lists = {
         'Quo',
         'Plex',
         'Grogan',
-        'Timeless'
+        'Timeless',
+        'Logistics',
+        'Vulcan',
+        'Artemis',
+        'Sanguine',
+        'Zenith',
+        'Eldritch',
+        'Redemption',
+        'Catalyst',
+        'Blood',
+        'Bloodhound',
+        'Wolves',
+        'Celestial',
+        'Apex',
+        'Alpha',
+        'Crimson',
+        'Abyss',
+        'Abyssal',
+        'Gorilla',
+        'Helios',
+        'Mars',
+        'Polar',
+        'Demon',
+        'Revenant',
+        'Dawn',
+        'Dusk',
+        'Midnight',
+        'Dread',
+        'Dreadnaught',
+        'Hyperborean',
+        'Dragon'
     ],
     "group": [
         "Protectors",
+        'Realm',
+        "Miners",
+        'Triumvirate',
+        'Harbingers',
+        'Hunters',
+        'Scavengers',
+        "Warriors",
+        'Students',
+        "Crusaders",
+        "Kingdom",
+        "Division",
+        "Mountaineers",
+        "Mining Clan",
+        "Shipbuilding Co",
+        "Resistance",
+        "Society",
         'Sedimentary',
         'Investment Fund',
+        'Children',
         'LLC',
+        'Band',
         'Partners',
         '& Co.',
         'Media',
@@ -393,6 +501,7 @@ word_lists = {
         'Enterprises',
         'Allignment',
         'Company',
+        'Administration',
         "Regency",
         'Monarchy',
         'Services',
@@ -406,14 +515,24 @@ word_lists = {
         'Technologies',
         'Dynamics',
         'Knights',
-        'Engineering'
+        "Commonwealth",
+        "Directorate",
+        "Agenda"
     ],
     "a": [
-        "Majestic", 
+        "Majestic",
+        "People's",
+        "Honorable",
+        'Eternal',
+        'Ethereal',
+        "Religious",
+        "Open",
+        "Underground",
         "Ancient", 
         "Fallen", 
         "Glorious",
         "Divine",
+        'Volcanic',
         "Heavenly",
         "Heavy",
         "Large",
@@ -464,6 +583,16 @@ word_lists = {
         'Arcane',
         "Expansionist",
         "Worldwide",
+        "Ultimate",
+        'Didactic'
+    ],
+    "verb" : [
+        "Seek",
+        "Follow",
+        "Find",
+        "Crusad",
+        "Chas",
+        'Fight',
     ]
 }
 
@@ -501,21 +630,26 @@ def parse_pattern(pattern, word_lists):
 
 # Example patterns
 patterns = [
-    "The [a:20%] [group] of [a:10%] [noun]",
-    "The [a:20%] [noun] [a:10%] [group]",
-    "[noun|a] [group]",
-    "[noun|a] [noun|a] [group]",
-    "[noun|a|group][noun|a|group]"
+    "The [a:20%] [group] of [a:10%] [noun|fictional_words]",
+    "The [a:20%] [noun|fictional_words] [a:10%] [group]",
+    "[noun|a|fictional_words] [group]",
+    "[noun|a] [noun|a|fictional_words] [group]",
+    "[noun|a|group|fictional_words][noun|a|group|fictional_words]"
 ]
 
 
-for i in range(160):
-    word_lists['noun'].append(f"{random.choice(word_lists['first_parts'])}{random.choice(word_lists['second_parts'])}")
+fictional_words = []
+
+for part in word_lists["first_parts"]:
+    for second in word_lists["second_parts"]:
+        fictional_words.append(f"{part}{second}")
+
+word_lists["fictional_words"] = fictional_words
 
 
 names = []
 
-for _ in tqdm(range(100000)):  # Generate 10 examples
+for _ in tqdm(range(200000)):  # Generate 10 examples
     pattern = random.choice(patterns)
     #print(parse_pattern(pattern, word_lists))
     name = parse_pattern(pattern, word_lists) + '\n'
