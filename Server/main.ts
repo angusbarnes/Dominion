@@ -1,5 +1,6 @@
 // Import the WebSocket library
 import WebSocket, { WebSocketServer } from 'ws';
+import test_string from './lib/db';
 
 // Types
 type PlayerData = {
@@ -20,7 +21,7 @@ type Message = {
 // Server setup
 const PORT = 8080;
 const wss = new WebSocketServer({ port: PORT });
-console.log(`WebSocket server running on ws://localhost:${PORT}`);
+console.log(`WebSocket server running on ws://localhost:${PORT} ${test_string}`);
 
 // Game state
 const gameState: GameState = {

@@ -1,3 +1,4 @@
+names.txt
 # Sensitive Project Files
 *.env
 *.cfg
@@ -11,3 +12,4 @@
 ehthumbs.db
 Icon?
 Thumbs.db
+
