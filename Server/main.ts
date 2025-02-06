@@ -1,11 +1,25 @@
 // Import the WebSocket library
 import WebSocket, { WebSocketServer } from 'ws';
 import test_string from './lib/db';
+import fs from 'fs';
+
+// Load or initialize player data storage
+const PLAYER_DATA_FILE = 'player_data.json';
+let playerDataStore: Record<string, { balance: number; energy: number; maxEnergy: number }> = {};
+
+if (fs.existsSync(PLAYER_DATA_FILE)) {
+    playerDataStore = JSON.parse(fs.readFileSync(PLAYER_DATA_FILE, 'utf8'));
+}
+
+// Save player data to file
+function savePlayerData() {
+    console.log(JSON.stringify(playerDataStore, null, 2))
+    fs.writeFileSync(PLAYER_DATA_FILE, JSON.stringify(playerDataStore, null, 2));
+}
 
 // Types
 type PlayerData = {
     socket: WebSocket;
-    data: Record<string, any>;
 };
 
 type GameState = {
@@ -13,10 +27,23 @@ type GameState = {
 };
 
 type Message = {
-    type: string;
+    type: MessageType;
+    playerId: string | number;
     payload?: any;
-    playerId?: any;
 };
+
+enum MessageType {
+    DEPLOY_UNITS = "DEPLOY",
+    UPDATE_BALANCE = "BALANCE",
+    QUERY_BALANCE = "QUERY_BALANCE",
+    PLACE_TILE = "PLACE",
+    UPDATE_ENTITY = "UPDATE",
+    GAME_STATE = "STATE",
+    PLAYER_LIST = "LIST",
+    QUERY_ENERGY = "QUERY_ENERGY",
+    UPDATE_ENERGY = "ENERGY",
+    SERVER_EVENT = "SERVER_EVENT"
+}
 
 // Server setup
 const PORT = 8080;
@@ -25,13 +52,12 @@ console.log(`WebSocket server running on ws://localhost:${PORT} ${test_string}`)
 
 // Game state
 const gameState: GameState = {
-    players: {},
+    players: {}
 };
 
 // Basic authentication (e.g., username/password or token validation)
 function authenticatePlayer(token: string): boolean {
-    // In a real implementation, validate the token securely.
-    return !!token && token.startsWith("player_"); // Example: token starts with 'player_'
+    return !!token && token.startsWith("player_");
 }
 
 // Broadcast message to all connected clients
@@ -43,47 +69,86 @@ function broadcast(message: Message): void {
     });
 }
 
+// Game loop (runs independently of message handling)
+function gameLoop(): void {
+    // Example: Update the game state periodically
+    //console.log("Game loop tick");
+    // Broadcast game state to all players
+    broadcast({ type: MessageType.SERVER_EVENT, playerId: 0, payload: {type: "balance_add", amount: 2}});
+
+    Object.entries(playerDataStore).forEach(([id, data]) => {
+        playerDataStore[id].balance += 2;
+    });
+
+    savePlayerData();
+}
+
+setInterval(gameLoop, 1000); // Run the game loop every second
+
 // Handle incoming messages from a player
 function handleMessage(playerId: string, message: string): void {
     try {
         const data: Message = JSON.parse(message);
-        // Example: Handle different message types
-        if (data.type === 'update') {
-            gameState.players[playerId].data = data.payload;
-            console.log(`Player ${playerId} updated state:`, data.payload);
-        } else {
-            console.log(`Unhandled message type from player ${playerId}:`, data.type);
+        
+        switch (data.type) {
+            case MessageType.UPDATE_BALANCE:
+                if (playerDataStore[playerId]) {
+                    playerDataStore[playerId].balance = data.payload.balance;
+                }
+                break;
+            
+            case MessageType.QUERY_BALANCE:
+                gameState.players[playerId].socket.send(JSON.stringify({
+                    type: MessageType.UPDATE_BALANCE,
+                    playerId,
+                    payload: { balance: playerDataStore[playerId]?.balance || 100 }
+                }));
+                break;
+            
+            case MessageType.UPDATE_ENERGY:
+                if (playerDataStore[playerId]) {
+                    playerDataStore[playerId].energy = data.payload.energy;
+                }
+                break;
+            
+            case MessageType.QUERY_ENERGY:
+                gameState.players[playerId].socket.send(JSON.stringify({
+                    type: MessageType.UPDATE_ENERGY,
+                    playerId,
+                    payload: { energy: playerDataStore[playerId]?.energy || 6, maxEnergy: playerDataStore[playerId]?.maxEnergy || 6 }
+                }));
+                break;
+            
+            default:
+                console.log(`Unhandled message type from player ${playerId}:`, data.type);
         }
     } catch (error) {
         console.error(`Error handling message from player ${playerId}:`, error);
     }
 }
 
-// Game loop (runs independently of message handling)
-function gameLoop(): void {
-    // Example: Update the game state periodically
-    console.log("Game loop tick");
-    // Broadcast game state to all players
-    broadcast({ type: 'game_state', payload: gameState });
-}
-
-setInterval(gameLoop, 1000); // Run the game loop every second
-
 // WebSocket event handling
 wss.on('connection', (ws, req) => {
-    const token = req.url?.split('?token=')[1]; // Extract token from query string
+    const token = req.url?.split('?token=')[1];
+    console.log(`Attempted socket connection with token=${token}`);
 
     if (token === undefined || !authenticatePlayer(token)) {
         ws.send(JSON.stringify({ type: 'error', message: 'Authentication failed' }));
         ws.close();
+        console.log(`token=${token} connection attempt was rejected`);
         return;
     }
 
-    const playerId: string = token; // Use token as the player ID (simplified)
-    gameState.players[playerId] = { socket: ws, data: {} };
+    const playerId: string = token;
+    if (!playerDataStore[playerId]) {
+        playerDataStore[playerId] = { balance: 100, energy: 6, maxEnergy: 6 };
+        savePlayerData();
+    }
+
+    gameState.players[playerId] = { socket: ws };
 
     console.log(`Player ${playerId} connected.`);
-    broadcast({ type: 'player_joined', playerId });
+    broadcast({ type: MessageType.PLAYER_LIST, playerId });
 
     // Handle incoming messages
     ws.on('message', (message: string) => handleMessage(playerId, message));
@@ -92,9 +157,9 @@ wss.on('connection', (ws, req) => {
     ws.on('close', () => {
         console.log(`Player ${playerId} disconnected.`);
         delete gameState.players[playerId];
-        broadcast({ type: 'player_left', playerId });
+        broadcast({ type: MessageType.PLAYER_LIST, playerId });
     });
 
-    // Send initial connection acknowledgment
-    ws.send(JSON.stringify({ type: 'connected', playerId }));
+    // Send initial player data
+    ws.send(JSON.stringify({ type: MessageType.UPDATE_BALANCE, playerId, payload: { balance: playerDataStore[playerId].balance, energy: playerDataStore[playerId].energy, maxEnergy: playerDataStore[playerId].maxEnergy } }));
 });

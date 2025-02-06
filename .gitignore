@@ -1,7 +1,6 @@
 names.txt
 # Sensitive Project Files
 *.env
-*.cfg
 
 # IDE Files
 /.vscode/
