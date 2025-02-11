@@ -19,6 +19,9 @@ var UI_DIRTY: bool = false
 func _ready():
 	
 	PurchaseButton.pressed.connect(self.purchase_made)
+	await establish_connection()
+		
+func establish_connection():
 	# websocket_url = websocket_url.format({"ID": rng.randi_range(10, 100000)})
 	# Initiate connection to the given URL.
 	var err = socket.connect_to_url(websocket_url)
@@ -29,18 +32,27 @@ func _ready():
 		# Wait for the socket to connect.
 		await get_tree().create_timer(2).timeout
 
+func NOTIFY_BALANCE_UPDATE(balance: int, energy: int):
+	socket.send_text(JSON.stringify({"type": "BALANCE", "playerId": 2131, "payload": {"balance": balance, "energy": energy}}))
+
+
 func purchase_made():
 	
 	if balance >= 10:
 		balance -= 10
 		UI_DIRTY = true
-		socket.send_text(JSON.stringify({"type": "BALANCE", "playerId": 2131, "payload": {"balance": balance}}))
+		NOTIFY_BALANCE_UPDATE(balance, energy)
+		
+
+func UPDATE_DYANMIC_UI():
+	BalanceLabel.text = "🪙 %d" % [balance]
+	EnergyLabel.text = "🔋 %d/%d" % [energy, max_energy]
 
 func _process(_delta):
 	
 	if UI_DIRTY:
-		BalanceLabel.text = "🪙 %d" % [balance]
-		EnergyLabel.text = "🔋 %d/%d" % [energy, max_energy]
+		UPDATE_DYANMIC_UI()
+		UI_DIRTY = false
 		
 	if balance <= 10:
 		PurchaseButton.disabled = true
@@ -69,6 +81,7 @@ func _process(_delta):
 			elif data["type"] == "SERVER_EVENT":
 				if data["payload"].type == "balance_add":
 					balance += data["payload"].amount
+					UI_DIRTY = true
 
 	# WebSocketPeer.STATE_CLOSING means the socket is closing.
 	# It is important to keep polling for a clean close.
@@ -85,8 +98,8 @@ func _process(_delta):
 		
 		var code = socket.get_close_code()
 
-		console.add_text("WebSocket closed with code: %d. Clean: %s" % [code, code != -1])
-		set_process(false) # Stop processing.
+		console.add_text("WebSocket closed with code: %d. Clean: %s. Attempting to reconnect" % [code, code != -1])
+		establish_connection()
 		
 	if console.get_line_count() > 100:
 		console.text = ""

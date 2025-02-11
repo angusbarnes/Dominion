@@ -1,5 +1,6 @@
 // Import the WebSocket library
 import WebSocket, { WebSocketServer } from 'ws';
+import express from 'express';
 import test_string from './lib/db';
 import fs from 'fs';
 
@@ -46,9 +47,41 @@ enum MessageType {
 }
 
 // Server setup
-const PORT = 8080;
-const wss = new WebSocketServer({ port: PORT });
-console.log(`WebSocket server running on ws://localhost:${PORT} ${test_string}`);
+const PORT = 8079;
+const app = express();
+app.use(express.json());
+
+// Simple in-memory user store (replace with database in a real application)
+const users: Record<string, string> = {
+    "player1": "password123",
+    "player2": "securepass"
+};
+
+// Generate a basic authentication token
+function generateAuthToken(username: string): string {
+    return `player_${username}_${Date.now()}`;
+}
+
+// Authentication endpoint
+app.post('/auth', (req: any, res: any) => {
+    const { username, password } = req.body;
+
+    if (users[username] && users[username] === password) {
+        const token = generateAuthToken(username);
+        res.json({ success: true, token });
+    } else {
+        res.status(401).json({ success: false, message: "Invalid credentials" });
+    }
+});
+
+// Start HTTP server
+app.listen(PORT, () => {
+    console.log(`HTTP server running on http://localhost:${PORT}`);
+});
+
+// WebSocket server
+const wss = new WebSocketServer({ port: PORT + 1 }); // WebSockets on a different port
+console.log(`WebSocket server running on ws://localhost:${PORT + 1} ${test_string}`);
 
 // Game state
 const gameState: GameState = {

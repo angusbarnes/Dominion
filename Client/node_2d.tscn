@@ -1,18 +1,31 @@
-[gd_scene load_steps=5 format=3 uid="uid://b52td2lmobgx3"]
+[gd_scene load_steps=7 format=3 uid="uid://b52td2lmobgx3"]
 
-[ext_resource type="Script" path="res://ws.gd" id="1_f0thr"]
+[ext_resource type="Script" path="res://ws.gd" id="1_pfsmb"]
 [ext_resource type="Texture2D" uid="uid://ctieu8aw6q5xv" path="res://test_tank.png" id="2_cgi5b"]
+[ext_resource type="Script" path="res://ProgressBarS.gd" id="3_v3hnk"]
 
 [sub_resource type="Theme" id="Theme_4o5sv"]
 
 [sub_resource type="Theme" id="Theme_b37ll"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6y7t0"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.180392, 0.180392, 0.180392, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
 [node name="Node2D" type="Node2D" node_paths=PackedStringArray("console", "BalanceLabel", "EnergyLabel", "PurchaseButton")]
-script = ExtResource("1_f0thr")
+script = ExtResource("1_pfsmb")
 console = NodePath("Panel/RichTextLabel")
 BalanceLabel = NodePath("Panel2/Label")
 EnergyLabel = NodePath("Panel2/Label2")
-PurchaseButton = NodePath("Button")
+PurchaseButton = NodePath("VBoxContainer/Panel3/Button")
 
 [node name="Panel" type="Panel" parent="."]
 offset_left = 3.0
@@ -50,26 +63,91 @@ offset_top = 12.0
 offset_right = 91.0
 offset_bottom = 44.0
 tooltip_text = "Bank Balance"
+mouse_filter = 0
 theme_override_font_sizes/font_size = 23
 text = "🪙 ---"
 
 [node name="Label2" type="Label" parent="Panel2"]
+layout_mode = 0
 offset_left = 114.0
 offset_top = 12.0
 offset_right = 191.0
 offset_bottom = 44.0
 tooltip_text = "Energy Available"
+mouse_filter = 0
 theme_override_font_sizes/font_size = 23
 text = "🔋 -/-"
 
-[node name="Button" type="Button" parent="."]
-offset_left = 513.0
-offset_top = 185.0
-offset_right = 610.0
-offset_bottom = 232.0
-text = "Buy (🪙 10)"
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+custom_minimum_size = Vector2(0, 20)
+offset_left = 351.0
+offset_top = 3.0
+offset_right = 637.0
+offset_bottom = 647.0
 
-[node name="TestTank" type="Sprite2D" parent="."]
-position = Vector2(432, 203)
+[node name="Panel3" type="Panel" parent="VBoxContainer"]
+custom_minimum_size = Vector2(20, 85.97)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_6y7t0")
+
+[node name="TestTank" type="Sprite2D" parent="VBoxContainer/Panel3"]
+position = Vector2(76, 44)
 scale = Vector2(0.368976, 0.402482)
 texture = ExtResource("2_cgi5b")
+
+[node name="Button" type="Button" parent="VBoxContainer/Panel3"]
+layout_mode = 0
+offset_left = 160.0
+offset_top = 21.0
+offset_right = 257.0
+offset_bottom = 68.0
+text = "Buy (🪙 10)"
+
+[node name="Panel4" type="Panel" parent="VBoxContainer"]
+custom_minimum_size = Vector2(20, 85.97)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_6y7t0")
+
+[node name="TestTank" type="Sprite2D" parent="VBoxContainer/Panel4"]
+position = Vector2(76, 44)
+scale = Vector2(0.368976, 0.402482)
+texture = ExtResource("2_cgi5b")
+
+[node name="Button" type="Button" parent="VBoxContainer/Panel4"]
+layout_mode = 0
+offset_left = 160.0
+offset_top = 21.0
+offset_right = 257.0
+offset_bottom = 68.0
+text = "Buy (🪙 10)"
+
+[node name="Panel5" type="Panel" parent="VBoxContainer"]
+custom_minimum_size = Vector2(20, 85.97)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_6y7t0")
+
+[node name="TestTank" type="Sprite2D" parent="VBoxContainer/Panel5"]
+position = Vector2(76, 44)
+scale = Vector2(0.368976, 0.402482)
+texture = ExtResource("2_cgi5b")
+
+[node name="Button" type="Button" parent="VBoxContainer/Panel5"]
+layout_mode = 0
+offset_left = 160.0
+offset_top = 21.0
+offset_right = 257.0
+offset_bottom = 68.0
+text = "Buy (🪙 10)"
+
+[node name="ProgressBar" type="ProgressBar" parent="."]
+offset_left = 658.0
+offset_top = 68.0
+offset_right = 909.0
+offset_bottom = 95.0
+script = ExtResource("3_v3hnk")
+
+[node name="HSlider" type="HSlider" parent="."]
+offset_left = 658.0
+offset_top = 102.0
+offset_right = 908.0
+offset_bottom = 118.0
