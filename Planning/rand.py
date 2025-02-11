@@ -190,7 +190,6 @@ if __name__ == "__main__":
     print(format_card(valid_stats[0]))
     best_card = valid_stats[-1]
     
-
     pack_choices = valid_stats[1:-1]
 
     choices = random.sample(pack_choices, k=13)
