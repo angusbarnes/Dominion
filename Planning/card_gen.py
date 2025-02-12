@@ -148,7 +148,7 @@ def categorize_rarity(power_rating):
     return "Common"
 
 def format_card(stats):
-    return f"{short_hash_case_insensitive(stats)} [{stats[0]}] {categorize_rarity(stats[0])}: Health: {stats[1]}, Att: {stats[2]}, {stats[-1]}"
+    return f"{short_hash_case_insensitive(stats)} [{stats[0]}] {categorize_rarity(stats[0])}: Health: {stats[1]}, Att: {stats[2]}, {stats[-2]}, Ability: {stats[-1]}"
 
 # Example Usage:
 if __name__ == "__main__":
@@ -161,12 +161,18 @@ if __name__ == "__main__":
         "Rare": 0
     }
 
-    PACK_COUNT = 5
+    PACK_COUNT = 1000
     best_card_found = None
     best_power = 0
 
     high_health_dual_attack_threshold = 70
+    ability_base_chance = 0.04
+    extreme_health_ability_boost = 0.60
 
+    cards_made = 0
+    abilities_made = 0
+    ability_bins = {}
+    ability_stats = []
     for i in range(PACK_COUNT):
         distribution_type = "normal"  # Change to "logistic" for logistic distribution
         
@@ -178,18 +184,38 @@ if __name__ == "__main__":
         stats = np.round(stats/10) * 10
 
         valid_stats = []
+
         for stat in stats:
-            health_modifier, attack_modifier = random.choice(ratios)
+
             if stat < 20: continue
+            cards_made += 1
             att = round(random.uniform(stat*0.3, stat)*0.8/10)*10
+
+            _random_state_backup = random.getstate()
+            card_specific_seed = random.randint(1,3)
+            random.seed(stat * card_specific_seed)
+
             bonus_att = 0
 
             if stat > high_health_dual_attack_threshold:
-                bonus_att = int(round((att * random.uniform(0.2, 0.5))/10)*10)  # Weaker secondary attack
+                bonus_att = int(round((att * random.uniform(0.25, 0.5))/10)*10)
+
+                # Probability of an ability slot increases at extreme health values
+            health_proximity = abs(stat - 70) / (100 - 20)
+            ability_chance = ability_base_chance + health_proximity * extreme_health_ability_boost
+            has_ability = random.random() < ability_chance
+            if has_ability:
+                abilities_made += 1
+                ability_stats.append(stat)
+                if stat in ability_bins:
+                    ability_bins[stat] += 1
+                else:
+                    ability_bins[stat] = 1
     
-            #print(f"Health: {round(stat*(health_modifier/(health_modifier+attack_modifier))/10)*10}, Attack: {round(stat*(attack_modifier/(health_modifier+attack_modifier))/10)*10}")
             #print(f"Health: {stat}, Attack: {att}")
-            valid_stats.append((stat+att*1.2, stat, att, random.randint(1,3), bonus_att))
+            valid_stats.append((stat+att*1.2, stat, att, card_specific_seed, bonus_att, has_ability))
+
+            random.setstate(_random_state_backup)
 
         #plot_distribution(stats, title=f"{distribution_type.capitalize()} Distribution")
 
@@ -232,6 +258,12 @@ if __name__ == "__main__":
             count[categorize_rarity(choice[0])] += 1
 
         print(format_card(best_card))
+
+    print(f"{abilities_made} Abilities / {cards_made} Cards [{abilities_made/cards_made * 100 :.2f}]")
+
+    #plt.bar(np.array(list(ability_bins.keys())), np.array(list(ability_bins.values())))
+    # plt.hist(ability_stats, bins=15)
+    # plt.show()
 
     print(" ")
     print(count)
