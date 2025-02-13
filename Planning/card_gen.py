@@ -1,32 +1,11 @@
 import hashlib
 import base64
 import random
+from typing import List
 import numpy as np
 import matplotlib.pyplot as plt
+from PIL import Image, ImageDraw, ImageFont
 
-def short_hash(data):
-    """
-    Generate a 6-character alphanumeric hash from arbitrary data.
-
-    Parameters:
-    - data: The input data (string, bytes, or any object that can be converted to a string)
-
-    Returns:
-    - A 6-character alphanumeric hash
-    """
-    # Ensure data is a string and encode to bytes
-    data_bytes = str(data).encode('utf-8')
-
-    # Create a SHA-256 hash
-    sha256_hash = hashlib.sha256(data_bytes).digest()
-
-    # Encode to base64 (URL-safe, but includes "-" and "_")
-    base64_hash = base64.urlsafe_b64encode(sha256_hash).decode('utf-8')
-
-    # Replace non-alphanumeric characters (just in case) and truncate to 6 characters
-    alphanumeric_hash = ''.join(filter(str.isalnum, base64_hash))[:6]
-
-    return alphanumeric_hash
 
 def short_hash_case_insensitive(data):
     """
@@ -58,6 +37,147 @@ def short_hash_case_insensitive(data):
 
     # Pad with leading zeros if necessary
     return base36_hash.rjust(6, '0')
+
+
+high_damage_dual_attack_threshold = 70
+ability_base_chance = 0.04
+extreme_health_ability_boost = 0.60
+
+class Card:
+    health: int
+    primary_attack: int
+    power_rating: float
+    rarity: str = "Common"
+    has_ability: bool = False
+    secondary_attack: int = 0
+    unique_card_id: str
+
+    def __init__(self, health, primary_attack):
+        self.health = health
+        self.primary_attack = primary_attack
+
+        self.power_rating = health + 1.2 * primary_attack
+
+        self.rarity = self.categorize_rarity(self.power_rating)
+
+        _random_state_backup = random.getstate()
+        card_specific_seed = random.randint(1,3)
+        random.seed(self.health * card_specific_seed)
+
+
+        #TODO: Make parameters accessible to the card class
+        if self.primary_attack >= high_damage_dual_attack_threshold:
+            self.secondary_attack = int(round((att * random.uniform(0.25, 0.5))/10)*10)
+
+            # Probability of an ability slot increases at extreme health values
+        health_proximity = abs(self.health - 70) / (100 - 20)
+        ability_chance = ability_base_chance + health_proximity * extreme_health_ability_boost
+        self.has_ability = random.random() < ability_chance
+
+
+        random.setstate(_random_state_backup)
+
+        self.unique_card_id = short_hash_case_insensitive([self.health, self.primary_attack, card_specific_seed])
+
+    def __str__(self):
+        return f"{self.unique_card_id} [{self.power_rating}] {self.rarity}: Health: {self.health}, Att: {self.primary_attack}, {self.secondary_attack}, Ability: {self.has_ability}"
+
+    def __repr__(self):
+        return self.__str__()
+    
+    def __hash__(self):
+        return self.unique_card_id
+
+    @staticmethod
+    def categorize_rarity(power_rating):
+
+        if power_rating >= 200:
+            return "Legendary"
+
+        if power_rating >= 170:
+            return "Ultra Rare"
+        
+        if power_rating >= 138:
+            return "Rare"
+        
+        if power_rating >= 106:
+            return "Uncommon"
+        
+        return "Common"
+    
+def generate_card_image(card, filename="card.png"):
+    width, height = int(300 * 2.5), int(300* 3.5)
+    bg_color = "white"
+    
+    img = Image.new("RGB", (width, height), bg_color)
+    draw = ImageDraw.Draw(img)
+    
+    # Fonts (use a basic font if PIL default fonts are unavailable)
+    try:
+        font = ImageFont.truetype("arial.ttf", 45)
+    except:
+        font = ImageFont.load_default()
+    
+    title_font = ImageFont.truetype("arial.ttf", 50) if font else font
+    
+    # Card border
+    draw.rectangle([(10, 10), (width - 10, height - 10)], outline="black", width=10)
+
+    draw.rectangle([(45, 90), (width - 45, 380)], outline="black", width=10)
+    
+    # Title
+    draw.text((40, 30), f"Card ID: {card.unique_card_id}", fill="black", font=title_font)
+    
+    # Health
+    draw.text((660, 30), f"{card.health}", fill="red", font=font)
+    
+    # Attack
+    draw.text((40, 700), f"Primary Attack: {card.primary_attack}", fill="blue", font=font)
+    if card.secondary_attack:
+        draw.text((40, 800), f"Secondary Attack: {card.secondary_attack}", fill="blue", font=font)
+    
+        # Ability
+    ability_text = "Yes" if card.has_ability else "No"
+    draw.text((40, 600), f"Ability: {ability_text}", fill="green", font=font)
+    # Power Rating
+    #draw.text((40, 700), f"Power: {card.power_rating:.1f}", fill="black", font=font)
+    
+    # Rarity
+    draw.text((40, 520), f"{card.rarity} Card", fill="gold", font=font)
+    
+
+    
+    # Save image
+    img.save(filename)
+    print(f"Card image saved as {filename}")
+
+
+
+def short_hash(data):
+    """
+    Generate a 6-character alphanumeric hash from arbitrary data.
+
+    Parameters:
+    - data: The input data (string, bytes, or any object that can be converted to a string)
+
+    Returns:
+    - A 6-character alphanumeric hash
+    """
+    # Ensure data is a string and encode to bytes
+    data_bytes = str(data).encode('utf-8')
+
+    # Create a SHA-256 hash
+    sha256_hash = hashlib.sha256(data_bytes).digest()
+
+    # Encode to base64 (URL-safe, but includes "-" and "_")
+    base64_hash = base64.urlsafe_b64encode(sha256_hash).decode('utf-8')
+
+    # Replace non-alphanumeric characters (just in case) and truncate to 6 characters
+    alphanumeric_hash = ''.join(filter(str.isalnum, base64_hash))[:6]
+
+    return alphanumeric_hash
+
+
 
 def generate_stats(distribution="normal", mean=50, std_dev=15, num_samples=1000):
     """
@@ -97,59 +217,6 @@ def plot_distribution(stats, title="Stat Distribution"):
     plt.grid()
     plt.show()
 
-
-def logistic_curve_stats(min_val=0, max_val=100, num_samples=1000, k=10):
-    """
-    Generate values following a logistic (sigmoid) curve.
-
-    Parameters:
-    - min_val: Minimum possible value
-    - max_val: Maximum possible value
-    - num_samples: Number of samples to generate
-    - k: Steepness of the logistic curve (higher = more extreme values)
-
-    Returns:
-    - Array of generated values
-    """
-    # Generate uniform random numbers in range [-6, 6] to cover most of the sigmoid curve
-    x = np.range()
-
-    # Apply the sigmoid function
-    sigmoid_values = 1 / (1 + np.exp(-k * x))
-
-    # Scale to desired range
-    scaled_values = min_val + (max_val - min_val) * sigmoid_values
-
-    return scaled_values
-
-
-ratios = [
-    (15, 10),
-    (2, 1),
-    (2, 1),
-    (3, 1),
-    (3, 1),
-]
-
-def categorize_rarity(power_rating):
-
-    if power_rating >= 200:
-        return "Legendary"
-
-    if power_rating >= 170:
-        return "Ultra Rare"
-    
-    if power_rating >= 138:
-        return "Rare"
-    
-    if power_rating >= 106:
-        return "Uncommon"
-    
-    return "Common"
-
-def format_card(stats):
-    return f"{short_hash_case_insensitive(stats)} [{stats[0]}] {categorize_rarity(stats[0])}: Health: {stats[1]}, Att: {stats[2]}, {stats[-2]}, Ability: {stats[-1]}"
-
 # Example Usage:
 if __name__ == "__main__":
 
@@ -161,29 +228,23 @@ if __name__ == "__main__":
         "Rare": 0
     }
 
-    PACK_COUNT = 1000
+    PACK_COUNT = 10
     best_card_found = None
     best_power = 0
-
-    high_health_dual_attack_threshold = 70
-    ability_base_chance = 0.04
-    extreme_health_ability_boost = 0.60
 
     cards_made = 0
     abilities_made = 0
     ability_bins = {}
     ability_stats = []
     for i in range(PACK_COUNT):
-        distribution_type = "normal"  # Change to "logistic" for logistic distribution
-        
-        # stats = logistic_curve_stats(min_val=0, max_val=100, num_samples=200, k=8)
+        #stats = logistic_curve_stats(min_val=0, max_val=100, num_samples=200, k=8)
         # plot_distribution(stats, title="Logistic (Sigmoid) Curve Distribution")
         
         #Maybe use 30 for booster creation reasons?
-        stats = generate_stats(distribution=distribution_type, mean=50, std_dev=32, num_samples=28)
+        stats = generate_stats(distribution="normal", mean=50, std_dev=32, num_samples=28)
         stats = np.round(stats/10) * 10
 
-        valid_stats = []
+        valid_cards: List[Card] = []
 
         for stat in stats:
 
@@ -191,35 +252,22 @@ if __name__ == "__main__":
             cards_made += 1
             att = round(random.uniform(stat*0.3, stat)*0.8/10)*10
 
-            _random_state_backup = random.getstate()
-            card_specific_seed = random.randint(1,3)
-            random.seed(stat * card_specific_seed)
+            card = Card(health=stat, primary_attack=att)
 
-            bonus_att = 0
-
-            if stat > high_health_dual_attack_threshold:
-                bonus_att = int(round((att * random.uniform(0.25, 0.5))/10)*10)
-
-                # Probability of an ability slot increases at extreme health values
-            health_proximity = abs(stat - 70) / (100 - 20)
-            ability_chance = ability_base_chance + health_proximity * extreme_health_ability_boost
-            has_ability = random.random() < ability_chance
-            if has_ability:
+            if card.has_ability:
                 abilities_made += 1
                 ability_stats.append(stat)
                 if stat in ability_bins:
                     ability_bins[stat] += 1
                 else:
                     ability_bins[stat] = 1
-    
-            #print(f"Health: {stat}, Attack: {att}")
-            valid_stats.append((stat+att*1.2, stat, att, card_specific_seed, bonus_att, has_ability))
 
-            random.setstate(_random_state_backup)
+            #print(f"Health: {stat}, Attack: {att}")
+            valid_cards.append(card)
 
         #plot_distribution(stats, title=f"{distribution_type.capitalize()} Distribution")
 
-        valid_stats.sort(key=lambda x: x[0])
+        valid_cards.sort(key=lambda x: x.power_rating)
 
         # power_ratings = []
         # for stat in valid_stats:
@@ -236,28 +284,28 @@ if __name__ == "__main__":
 
 
 
-        print(format_card(valid_stats[0]))
+        print(valid_cards[0])
 
-        count[categorize_rarity(valid_stats[0][0])] += 1
+        count[valid_cards[0].rarity] += 1
 
 
-        best_card = valid_stats[-1]
+        best_card = valid_cards[-1]
 
-        if best_card[0] > best_power:
-            best_power = best_card[0]
+        if best_card.power_rating > best_power:
+            best_power = best_card.power_rating
             best_card_found = best_card
 
 
-        count[categorize_rarity(best_card[0])] += 1
+        count[best_card.rarity] += 1
 
-        pack_choices = valid_stats[1:-1]
+        pack_choices = valid_cards[1:-1]
 
         choices = random.sample(pack_choices, k=13)
         for choice in choices:
-            print(format_card(choice))
-            count[categorize_rarity(choice[0])] += 1
+            print(choice)
+            count[choice.rarity] += 1
 
-        print(format_card(best_card))
+        print(best_card)
 
     print(f"{abilities_made} Abilities / {cards_made} Cards [{abilities_made/cards_made * 100 :.2f}]")
 
@@ -275,4 +323,8 @@ if __name__ == "__main__":
     print(f"Ultra Rare: {count['Ultra Rare']} [{(count['Ultra Rare']/(PACK_COUNT * 15)) * 100:.2f}%] 1-in-{round(1/(count['Ultra Rare']/(PACK_COUNT * 15.0)))}")
     print(f"Legendary: {count['Legendary']} [{(count['Legendary']/(PACK_COUNT * 15)) * 100:.2f}%] 1-in-{round(1/(count['Legendary']/(PACK_COUNT * 15.0)))}")
     print("")
-    print(f"Best card: {format_card(best_card_found)}")
+    print(f"Best card: {best_card_found}")
+
+        # Example card object
+    card = Card(health=85, primary_attack=60)
+    generate_card_image(card, "sample_card.png")
