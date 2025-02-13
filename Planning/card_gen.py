@@ -114,9 +114,12 @@ def generate_card_image(card, filename="card.png"):
     
     # Fonts (use a basic font if PIL default fonts are unavailable)
     try:
+        font_italic = ImageFont.truetype("arial_italic.ttf", 35)
         font = ImageFont.truetype("arial.ttf", 45)
+        font_dots = ImageFont.truetype("doto.ttf", 30)
     except:
         font = ImageFont.load_default()
+        font_italic = ImageFont.load_default()
     
     title_font = ImageFont.truetype("arial.ttf", 50) if font else font
     
@@ -131,7 +134,7 @@ def generate_card_image(card, filename="card.png"):
     draw.text((40, 30), f"Card ID: {card.unique_card_id}", fill="black", font=title_font)
     
     # Health
-    draw.text((660, 30), f"{card.health}", fill="red", font=font)
+    draw.text((610, 30), f"{card.health}", fill="red", font=font)
     
     # Attack
     draw.text((40, 700), f"Primary Attack: {card.primary_attack}", fill="blue", font=font)
@@ -145,9 +148,10 @@ def generate_card_image(card, filename="card.png"):
     #draw.text((40, 700), f"Power: {card.power_rating:.1f}", fill="black", font=font)
     
     # Rarity
-    draw.text((40, 520), f"{card.rarity} Card", fill="gold", font=font)
+    draw.text((40, 520), f"{card.rarity} Card", fill=(32, 176, 154), font=font_italic)
     
 
+    draw.text((610, height - 60), f"{card.unique_card_id}", fill=(79, 79, 79), font=font_dots)
     
     # Save image
     img.save(filename)
