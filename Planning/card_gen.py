@@ -123,7 +123,9 @@ def generate_card_image(card, filename="card.png"):
     # Card border
     draw.rectangle([(10, 10), (width - 10, height - 10)], outline="black", width=10)
 
-    draw.rectangle([(45, 90), (width - 45, 380)], outline="black", width=10)
+    draw.ellipse([(width - 80, 30), (width - 30, 80)], outline="black", width=4)
+
+    draw.rectangle([(45, 90), (width - 45, 520)], outline="black", width=10)
     
     # Title
     draw.text((40, 30), f"Card ID: {card.unique_card_id}", fill="black", font=title_font)
