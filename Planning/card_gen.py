@@ -53,7 +53,7 @@ class Card:
     unique_card_id: str
 
     def __init__(self, health, primary_attack):
-        self.health = health
+        self.health = int(health)
         self.primary_attack = primary_attack
 
         self.power_rating = health + 1.2 * primary_attack
@@ -152,7 +152,7 @@ def generate_card_image(card, filename="card.png"):
     draw.text((40, 30), f"Card ID: {card.unique_card_id}", fill="black", font=title_font)
     
     # Health
-    draw.text((610, 30), f"{card.health}", fill="red", font=font)
+    draw.text((width - 90, 40), f"{card.health}", fill="red", font=font, anchor="rt")
     
     # Attack
     draw.text((50, 800), f"Primary Attack:                    {card.primary_attack}", fill="blue", font=font)
@@ -355,5 +355,4 @@ if __name__ == "__main__":
     print(f"Best card: {best_card_found}")
 
         # Example card object
-    card = Card(health=85, primary_attack=70)
-    generate_card_image(card, "sample_card.png")
+    generate_card_image(best_card_found, "sample_card.png")
